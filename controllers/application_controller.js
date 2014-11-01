@@ -16,11 +16,13 @@ ApplicationController.prototype.main = function() {
     self.promptForCommand(function(err, result) {
         try {
             self.run(result.command, {}, function(err, data) {
-                if(err){
+                if (err) {
                     console.log(err);
-                }else {
-                    console.log(data + "\n");
+                } else {
+                    console.log(data);
                 }
+
+                console.log('');
 
                 self.main();
             });
@@ -32,8 +34,8 @@ ApplicationController.prototype.main = function() {
 
 ApplicationController.prototype.run = function(command, context, callback) {
     //take input as "space separated words" and transform it into "lowercase_underscore_separated_words"
-    command = command.replace(/ /g, '_').toLowerCase();
-    var cmd = require('../' + CONSTANTS.COMMANDLETS_FOLDER + '/' + command);
+    var filename = command.replace(/ /g, '_').toLowerCase();
+    var cmd = require('../' + CONSTANTS.COMMANDLETS_FOLDER + '/' + filename);
     console.log('\nRunning "' + command + '"\n');
     cmd(this, context, callback);
 };

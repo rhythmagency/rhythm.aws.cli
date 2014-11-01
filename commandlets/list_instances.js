@@ -10,7 +10,6 @@ module.exports = function(app, context, callback) {
     var params = context.params || {};
 
     ec2.describeInstances(params, function(err, data){
-//        console.log(data);
         callback(err, data);
     });
 };
