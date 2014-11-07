@@ -1,0 +1,2 @@
+ - Async commands should complete before returning to show the command prompt
+ - Commandlets need to be able to take arguments from the command prompt (possibly list options)
