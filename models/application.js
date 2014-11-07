@@ -6,6 +6,7 @@ function Application(packageData){
     this.name = packageData.name;
     this.version = packageData.version;
     this.AWS = require('aws-sdk');
+    this.hasDisplayedWelcomeBanner = false;
 
     if (fs.existsSync('./awsconfig.json')) {
         console.log('Loading credentials from awsconfig.json');

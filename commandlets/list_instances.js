@@ -1,15 +1,24 @@
 'use strict';
 
-module.exports = function(app, context, callback) {
-    var region = context.region || 'us-east-1';
+module.exports = function(context, callback) {
+    var app = context.app;
+    var prompt = app.prompt;
 
-    app.model.AWS.config.update({region: region});
+    var defaultRegion = 'us-east-1';
 
-    var ec2 = new app.model.AWS.EC2();
+    var promptMsg = 'region ['+defaultRegion+']';
 
-    var params = context.params || {};
+    prompt.get([promptMsg], function(err, stdin) {
+        var region = stdin[promptMsg] || defaultRegion;
 
-    ec2.describeInstances(params, function(err, data){
-        callback(err, data);
+        context.app.model.AWS.config.update({region: region});
+
+        var ec2 = new context.app.model.AWS.EC2();
+
+        var params = context.params || {};
+
+        ec2.describeInstances(params, function(err, data){
+            callback(err, data);
+        });
     });
 };

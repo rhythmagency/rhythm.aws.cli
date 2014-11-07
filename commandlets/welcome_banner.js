@@ -1,8 +1,8 @@
 'use strict';
 
-module.exports = function(app, context, callback) {
-    var fills = ['$', '+', '#', '@', '&', ' ', '1'];
-    var backgrounds = [' ', '0'];
+module.exports = function(context, callback) {
+    var fills = ['$', '+', '#', '@', '&', '1'];
+    var backgrounds = [' '];
 
     var defaultFill = fills[Math.floor(Math.random()*fills.length)];
     var defaultBackground = backgrounds[Math.floor(Math.random()*backgrounds.length)];
@@ -21,7 +21,7 @@ module.exports = function(app, context, callback) {
 '$$ |      $$ |  $$ |\\$$$$$$$ |  \\$$$$  |$$ |  $$ |$$ | $$ | $$ |'+'\n'+
 '\\__|      \\__|  \\__| \\____$$ |   \\____/ \\__|  \\__|\\__| \\__| \\__|'+'\n'+
 '                    $$\\   $$ |\n'+
-'                    \\$$$$$$  |     X'+app.model.name+' '+app.model.version+'X\n'+
+'                    \\$$$$$$  |     X'+context.app.model.name+' '+context.app.model.version+'X\n'+
 '                     \\______/\n';
 
     var lines = banner.split('\n');

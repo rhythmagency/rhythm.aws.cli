@@ -2,46 +2,78 @@
 
 var CONSTANTS = require('../constants.js');
 
-var prompt = require('prompt');
-
 function ApplicationController(applicationModel) {
     this.model = applicationModel;
-    prompt.message = this.model.name;
-    prompt.start();
+    this.prompt = require('prompt');
+    this.async = require('async');
+
+    this.prompt.message = this.model.name;
+    this.prompt.start();
 };
 
 ApplicationController.prototype.main = function() {
-    var self = this;
+    var app = this;
+    var async = app.async;
+    var prompt = app.prompt;
 
-    self.promptForCommand(function(err, result) {
+    if(!app.model.hasDisplayedWelcomeBanner){
+        app.model.hasDisplayedWelcomeBanner = true;
+
+        app.displayWelcomeBanner();
+        return;
+    }
+
+    prompt.get(['command'], function(err, stdin) {
         try {
-            self.run(result.command, {}, function(err, data) {
+            var commandlet = app.getCommandlet(stdin.command);
+            async.series([
+                async.apply(commandlet, {app: app})
+            ], function(err, data) {
                 if (err) {
                     console.log(err);
                 } else {
-                    console.log(data);
+                    data.forEach(function(el, idx, arr){
+                        if(typeof el === 'object')
+                            console.log(JSON.stringify(el, null, ' '));
+                        else
+                            console.log(el);
+                    });
                 }
 
                 console.log('');
 
-                self.main();
+                app.main();
             });
         } catch (e) {
             console.error(e);
+
+            app.main();
         }
     });
 };
 
-ApplicationController.prototype.run = function(command, context, callback) {
-    //take input as "space separated words" and transform it into "lowercase_underscore_separated_words"
-    var filename = command.replace(/ /g, '_').toLowerCase();
-    var cmd = require('../' + CONSTANTS.COMMANDLETS_FOLDER + '/' + filename);
-    console.log('\nRunning "' + command + '"\n');
-    cmd(this, context, callback);
+ApplicationController.prototype.displayWelcomeBanner = function(){
+    var app = this;
+    app.model.hasDisplayedWelcomeBanner = true;
+
+    try {
+        var commandlet = app.getCommandlet('welcome banner');
+        commandlet({app: app}, function(err, data){
+            console.log(data);
+            console.log('');
+            app.main();
+        });
+    } catch (e) {
+        console.error(e);
+
+        app.main();
+    }
 };
 
-ApplicationController.prototype.promptForCommand = function(callback) {
-    prompt.get(['command'], callback);
+ApplicationController.prototype.getCommandlet = function(command) {
+    //take input as "space separated words" and transform it into "lowercase_underscore_separated_words"
+    var filename = command.replace(/ /g, '_').toLowerCase();
+    return require('../' + CONSTANTS.COMMANDLETS_FOLDER + '/' + filename);
 };
 
 module.exports = ApplicationController;
