@@ -9,7 +9,7 @@ function ApplicationController(applicationModel) {
 
     this.prompt.message = this.model.name;
     this.prompt.start();
-};
+}
 
 ApplicationController.prototype.main = function() {
     var app = this;
@@ -32,12 +32,12 @@ ApplicationController.prototype.main = function() {
                 if (err) {
                     console.log(err);
                 } else {
-                    data.forEach(function(el, idx, arr){
-                        if(typeof el === 'object')
-                            console.log(JSON.stringify(el, null, ' '));
-                        else
-                            console.log(el);
-                    });
+//                    data.forEach(function(el, idx, arr){
+//                        if(typeof el === 'object')
+//                            console.log(JSON.stringify(el, null, ' '));
+//                        else
+//                            console.log(el);
+//                    });
                 }
 
                 console.log('');

@@ -18,6 +18,28 @@ module.exports = function(context, callback) {
         var params = context.params || {};
 
         ec2.describeInstances(params, function(err, data){
+            data.Reservations.forEach(function(el, idx, arr){
+                console.log('ReservationId: '+el.ReservationId);
+                if(el.Instances.length > 0) {
+                    console.log('|------------------------------------------------');
+
+                    el.Instances.forEach(function(el, idx, arr) {
+                        console.log('| InstanceId:              ' + el.InstanceId);
+                        console.log('| PublicIpAddress:         ' + el.PublicIpAddress);
+                        console.log('| Platform:                ' + el.Platform);
+                        console.log('| Architecture:            ' + el.Architecture);
+                        if (el.Tags.length > 0) {
+                            console.log('|    Tags:');
+                            el.Tags.forEach(function(el, idx, arr) {
+                                console.log('|     ' + el.Key + ': ' + el.Value);
+                            });
+                        }
+                        console.log('|------------------------------------------------');
+                    });
+                }
+                console.log('');
+            });
+
             callback(err, data);
         });
     });
