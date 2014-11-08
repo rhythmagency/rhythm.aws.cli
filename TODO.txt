@@ -1,2 +1,11 @@
  - Async commands should complete before returning to show the command prompt
  - Commandlets need to be able to take arguments from the command prompt (possibly list options)
+ - Press up arrow to recall previous commands
+
+aws.cli.ProjectName
+i.e. somedomain.com (typically matches project's repo name)
+
+aws.cli.Environment
+i.e. Production (Production|Staging|Test|Sandbox)
+
+Skeddly (means shutdown server at 2am and snapshot it)

@@ -20,34 +20,36 @@ module.exports = function(context, callback) {
         var params = context.params || {};
 
         ec2.describeInstances(params, function(err, data){
-            data.Reservations.forEach(function(el, idx, arr){
-                console.log('ReservationId: '+el.ReservationId);
-                if(el.Instances.length > 0) {
-                    console.log('|------------------------------------------------');
+            var projectNames = {};
 
+            data.Reservations.forEach(function(el, idx, arr){
+                if(el.Instances.length > 0) {
                     el.Instances.forEach(function(el, idx, arr) {
-                        console.log('| InstanceId:              ' + el.InstanceId);
-                        console.log('| PublicIpAddress:         ' + el.PublicIpAddress);
-                        console.log('| Platform:                ' + el.Platform);
-                        console.log('| Architecture:            ' + el.Architecture);
                         if (el.Tags.length > 0) {
-                            console.log('|    Tags:');
                             el.Tags.forEach(function(el, idx, arr) {
                                 var tagName = el.Key;
 
-                                if(tagName.substr(0, CONSTANTS.TAG_PREFIX.length) == CONSTANTS.TAG_PREFIX){
-                                    tagName = tagName.substr(CONSTANTS.TAG_PREFIX.length);
+                                if(tagName == CONSTANTS.TAG_PROJECT_NAME){
+                                    projectNames[el.Value] = el.Value;
                                 }
-                                console.log('|     ' + tagName + ': ' + el.Value);
                             });
                         }
-                        console.log('|------------------------------------------------');
                     });
                 }
-                console.log('');
             });
 
-            callback(err, data);
+            var projectNamesArr = [];
+            Object.keys(projectNames).forEach(function(el, idx, arr) {
+                projectNamesArr.push(el);
+            });
+
+            projectNamesArr.sort();
+
+            projectNamesArr.forEach(function(el, idx, arr) {
+                console.log(el);
+            });
+
+            callback(err, projectNames);
         });
     });
 };
