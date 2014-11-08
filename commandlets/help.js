@@ -17,6 +17,8 @@ module.exports = function(context, callback) {
 
     var msg = validCommandlets.join('\n');
 
+    console.log(msg);
+
     if(typeof callback === 'function')
         callback(null, msg);
     else
