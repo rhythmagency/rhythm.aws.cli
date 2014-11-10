@@ -26,19 +26,21 @@ module.exports = function(context, callback) {
                     console.log('|------------------------------------------------');
 
                     el.Instances.forEach(function(el, idx, arr) {
+                        console.log('| Name:                    ' + el.KeyName);
                         console.log('| InstanceId:              ' + el.InstanceId);
+                        console.log('| State:                   ' + el.State.Name);
                         console.log('| PublicIpAddress:         ' + el.PublicIpAddress);
                         console.log('| Platform:                ' + el.Platform);
                         console.log('| Architecture:            ' + el.Architecture);
                         if (el.Tags.length > 0) {
-                            console.log('|    Tags:');
+                            console.log('| Tags:');
                             el.Tags.forEach(function(el, idx, arr) {
                                 var tagName = el.Key;
 
                                 if(tagName.substr(0, CONSTANTS.TAG_PREFIX.length) == CONSTANTS.TAG_PREFIX){
                                     tagName = tagName.substr(CONSTANTS.TAG_PREFIX.length);
                                 }
-                                console.log('|     ' + tagName + ': ' + el.Value);
+                                console.log('|       ' + tagName + ': ' + el.Value);
                             });
                         }
                         console.log('|------------------------------------------------');
