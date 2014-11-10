@@ -7,10 +7,10 @@
     "devcycle": "./aws-cli"
   },
   "dependencies": {
-    "async": "^0.9.0",
     "aws-sdk": "^2.0.9",
     "fs-extra": "^0.10.0",
-    "prompt": "^0.2.14"
+    "prompt": "^0.2.14",
+    "q": "^1.1.1"
   },
   "repository": {
     "type": "git",

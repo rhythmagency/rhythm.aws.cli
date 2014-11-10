@@ -46,6 +46,8 @@ module.exports = function(context, callback) {
     banner = banner.replace(/ /g, s).replace(/\$/g, l).replace(/X/g, ' ');
 
     banner += '\n\nType "help" for a list of available commands.';
+
+    console.log(banner);
     
     callback(null, banner);
 };

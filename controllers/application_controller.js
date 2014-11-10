@@ -5,7 +5,7 @@ var CONSTANTS = require('../constants.js');
 function ApplicationController(applicationModel) {
     this.model = applicationModel;
     this.prompt = require('prompt');
-    this.async = require('async');
+    this.Q = require('q');
 
     this.prompt.message = this.model.name;
     this.prompt.start();
@@ -13,7 +13,7 @@ function ApplicationController(applicationModel) {
 
 ApplicationController.prototype.main = function() {
     var app = this;
-    var async = app.async;
+    var Q = app.Q;
     var prompt = app.prompt;
 
     if(!app.model.hasDisplayedWelcomeBanner){
@@ -26,24 +26,16 @@ ApplicationController.prototype.main = function() {
     prompt.get(['command'], function(err, stdin) {
         try {
             var commandlet = app.getCommandlet(stdin.command);
-            async.series([
-                async.apply(commandlet, {app: app})
-            ], function(err, data) {
-                if (err) {
+
+            Q.nfcall(commandlet, {app: app})
+                .then(function(data){
+                    console.log('');
+                    app.main();
+                })
+                .catch(function(err){
                     console.log(err);
-                } else {
-//                    data.forEach(function(el, idx, arr){
-//                        if(typeof el === 'object')
-//                            console.log(JSON.stringify(el, null, ' '));
-//                        else
-//                            console.log(el);
-//                    });
-                }
+                });
 
-                console.log('');
-
-                app.main();
-            });
         } catch (e) {
             console.error(e);
 
@@ -59,7 +51,6 @@ ApplicationController.prototype.displayWelcomeBanner = function(){
     try {
         var commandlet = app.getCommandlet('welcome banner');
         commandlet({app: app}, function(err, data){
-            console.log(data);
             console.log('');
             app.main();
         });
