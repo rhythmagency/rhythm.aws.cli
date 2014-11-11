@@ -49,5 +49,5 @@ module.exports = function(context, callback) {
 
     console.log(banner);
     
-    callback(null, banner);
+    return banner;
 };

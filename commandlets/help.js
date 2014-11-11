@@ -3,7 +3,7 @@
 var fs = require('fs-extra');
 var path = require('path');
 
-module.exports = function(context, callback) {
+module.exports = function(context) {
     var commandlets = fs.readdirSync('./commandlets');
     var validCommandlets = [];
 
@@ -19,8 +19,5 @@ module.exports = function(context, callback) {
 
     console.log(msg);
 
-    if(typeof callback === 'function')
-        callback(null, msg);
-    else
-        console.log('callback passed is not a function ', typeof callback);
+    return msg;
 };

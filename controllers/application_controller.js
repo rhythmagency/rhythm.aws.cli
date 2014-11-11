@@ -1,11 +1,13 @@
 'use strict';
 
+var Q = require('q');
 var CONSTANTS = require('../constants.js');
 
 function ApplicationController(applicationModel) {
     this.model = applicationModel;
     this.prompt = require('prompt');
-    this.Q = require('q');
+    var AWSController = require('./aws_controller');
+    this.awsAPI = new AWSController();
 
     this.prompt.message = this.model.name;
     this.prompt.start();
@@ -13,7 +15,6 @@ function ApplicationController(applicationModel) {
 
 ApplicationController.prototype.main = function() {
     var app = this;
-    var Q = app.Q;
     var prompt = app.prompt;
 
     if(!app.model.hasDisplayedWelcomeBanner){
@@ -23,48 +24,43 @@ ApplicationController.prototype.main = function() {
         return;
     }
 
-    prompt.get(['command'], function(err, stdin) {
-        try {
+    Q.ninvoke(prompt, 'get', ['command'])
+        .then(function(stdin){
             var commandlet = app.getCommandlet(stdin.command);
 
-            Q.nfcall(commandlet, {app: app})
-                .then(function(data){
+            commandlet.then(function(data){
                     console.log('');
                     app.main();
-                })
-                .catch(function(err){
-                    console.log(err);
-                });
-
-        } catch (e) {
-            console.error(e);
-
+                }).done();
+        })
+        .catch(function(e){
+            console.log(e);
             app.main();
-        }
-    });
+        });
 };
 
 ApplicationController.prototype.displayWelcomeBanner = function(){
     var app = this;
     app.model.hasDisplayedWelcomeBanner = true;
 
-    try {
-        var commandlet = app.getCommandlet('welcome banner');
-        commandlet({app: app}, function(err, data){
+    var commandlet = app.getCommandlet('welcome banner');
+
+    commandlet.then(function(data){
             console.log('');
             app.main();
+        })
+        .catch(function(e){
+            console.log(e);
+            app.main();
         });
-    } catch (e) {
-        console.error(e);
-
-        app.main();
-    }
 };
 
 ApplicationController.prototype.getCommandlet = function(command) {
+    var app = this;
     //take input as "space separated words" and transform it into "lowercase_underscore_separated_words"
     var filename = command.replace(/ /g, '_').toLowerCase();
-    return require('../' + CONSTANTS.COMMANDLETS_FOLDER + '/' + filename);
+    var commandlet = require('../' + CONSTANTS.COMMANDLETS_FOLDER + '/' + filename);
+    return Q.fcall(commandlet, {app: app});
 };
 
 module.exports = ApplicationController;
