@@ -176,8 +176,6 @@ AWSController.prototype.listSnapshots = function(region, project, environment, p
         );
     }
 
-    console.log(params);
-
     return Q.ninvoke(ec2, 'describeSnapshots', params);
 };
 
