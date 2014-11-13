@@ -3,13 +3,6 @@
 var Q = require('q');
 var CONSTANTS = require('../constants');
 
-function sortByKey(array, key) {
-    return array.sort(function(a, b) {
-        var x = a[key]; var y = b[key];
-        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-    });
-}
-
 module.exports = function(context) {
     var app = context.app;
     var awsAPI = app.awsAPI;
@@ -36,33 +29,28 @@ module.exports = function(context) {
                         .then(function(stdin) {
                             var environment = stdin[promptMsg3] || defaultEnv;
 
-                            return awsAPI.listSnapshots(region, project, environment, {})
-                                .then(function(data) {
-                                    if(data.Snapshots.length > 0) {
-                                        sortByKey(data.Snapshots, 'StartTime').reverse();
-                                        var el = data.Snapshots.pop();
+                            return awsAPI.latestSnapshot(region, project, environment, {})
+                                .then(function(el) {
+                                    console.log('|------------------------------------------------');
+                                    console.log('| SnapshotId:                  ' + el.SnapshotId);
+                                    console.log('| VolumeId:                    ' + el.VolumeId);
+                                    console.log('| State:                       ' + el.State);
+                                    console.log('| Progress:                    ' + el.Progress);
+                                    console.log('| VolumeSize:                  ' + el.VolumeSize);
+                                    console.log('| Encrypted:                   ' + el.Encrypted);
+                                    console.log('| StartTime:                   ' + el.StartTime);
+                                    if (el.Tags.length > 0) {
+                                        console.log('| Tags:');
+                                        el.Tags.forEach(function(el, idx, arr) {
+                                            var tagName = el.Key;
 
-                                        console.log('|------------------------------------------------');
-                                        console.log('| SnapshotId:                  ' + el.SnapshotId);
-                                        console.log('| VolumeId:                    ' + el.VolumeId);
-                                        console.log('| State:                       ' + el.State);
-                                        console.log('| Progress:                    ' + el.Progress);
-                                        console.log('| VolumeSize:                  ' + el.VolumeSize);
-                                        console.log('| Encrypted:                   ' + el.Encrypted);
-                                        console.log('| StartTime:                   ' + el.StartTime);
-                                        if (el.Tags.length > 0) {
-                                            console.log('| Tags:');
-                                            el.Tags.forEach(function(el, idx, arr) {
-                                                var tagName = el.Key;
-
-                                                if (tagName.substr(0, CONSTANTS.TAG_PREFIX.length) == CONSTANTS.TAG_PREFIX) {
-                                                    tagName = tagName.substr(CONSTANTS.TAG_PREFIX.length);
-                                                }
-                                                console.log('|       ' + tagName + ': ' + el.Value);
-                                            });
-                                        }
-                                        console.log('|------------------------------------------------');
+                                            if (tagName.substr(0, CONSTANTS.TAG_PREFIX.length) == CONSTANTS.TAG_PREFIX) {
+                                                tagName = tagName.substr(CONSTANTS.TAG_PREFIX.length);
+                                            }
+                                            console.log('|       ' + tagName + ': ' + el.Value);
+                                        });
                                     }
+                                    console.log('|------------------------------------------------');
                                 });
                             });
                     });

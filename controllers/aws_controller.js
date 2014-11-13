@@ -14,7 +14,17 @@ function AWSController() {
         console.log('Loading credentials from ~/.aws/credentials');
     }
 }
+
+function sortByKey(array, key) {
+    return array.sort(function(a, b) {
+        var x = a[key]; var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+    });
+}
+
 /*
+II: When environments are created, they will be assigned DNS names via Route53's changeResourceRecordSets API call.
+
 createEnvironmentFromSnapshot(projectName : string, newEnvironmentName : string, snapshotId : string) : promise[instanceId : string, domain : string, ipAddress : string]
 Creates a new environment from a given snapshotId. If the environment exists, the function fails.
 Example: createEnvironmentFromSnapshot("myvaleantpartnership", "Staging", "snap-27d95081").then(...)
@@ -203,6 +213,30 @@ AWSController.prototype.listSnapshots = function(region, project, environment, p
 
     return Q.ninvoke(ec2, 'describeSnapshots', params);
 };
+
+/**
+ * Gets the most recent snapshot for the given project / environment.
+ *
+ * @param region
+ * @param project
+ * @param environment
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.latestSnapshot = function(region, project, environment, params){
+    var self = this;
+
+    return self.listSnapshots(region, project, environment, params)
+                    .then(function(data) {
+                        if (data.Snapshots.length > 0) {
+                            sortByKey(data.Snapshots, 'StartTime').reverse();
+                            return data.Snapshots.pop();
+                        } else {
+                            return null;
+                        }
+                    });
+}
 
 /**
  * Gets a list of all images for a given project / environment.
