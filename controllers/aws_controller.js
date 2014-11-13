@@ -15,26 +15,21 @@ function AWSController() {
     }
 }
 /*
-createEnvironment(projectName : string, newEnvironmentName : string, snapshotId : string) : promise[instanceId : string, domain : string, ipAddress : string]
+createEnvironmentFromSnapshot(projectName : string, newEnvironmentName : string, snapshotId : string) : promise[instanceId : string, domain : string, ipAddress : string]
 Creates a new environment from a given snapshotId. If the environment exists, the function fails.
-Example: createEnvironment("myvaleantpartnership", "sandbox", "snap-27d95081").then(...)
+Example: createEnvironmentFromSnapshot("myvaleantpartnership", "Staging", "snap-27d95081").then(...)
 
 createEnvironmentSnapshot(projectName : string. environmentName : string) : promise[newSnapshotId : string]
-Creates a new snapshot for the given project / environment. Instance will be shutdown to ensure snapshot integrity.
-Example: createEnvironmentSnapshot("myvaleantpartnership", "production").then(...)
+Creates a new snapshot for the given project and environment. Instance will be shutdown to ensure snapshot integrity.
+Example: createEnvironmentSnapshot("myvaleantpartnership", "Production").then(...)
 
-copyEnvironment(projectName : string, sourceEnvironmentName : string, targetEnvironmentName : string) : promise[instanceId : string, domain : string, ipAddress : string]
-Copies an existing environment, based on the most recent snapshot. If the target exists, the function fails. Shortcut for createEnvironment function.
-Example: copyEnvironment("myvaleantpartnership", "production", "sandbox").then(...)
+cloneEnvironment(projectName : string, sourceEnvironmentName : string, targetEnvironmentName : string) : promise[instanceId : string, domain : string, ipAddress : string]
+Convenience method for createEnvironment function with latest snapshot.
+Example: cloneEnvironment("myvaleantpartnership", "Production", "Staging").then(...)
 
-deleteEnvironment(projectName : string, environmentName : string) : promise[newSnapshotId : string]
-Deletes an existing environment, given the project / environment name. Instance will be shutdown, and a snapshot of the instance will be taken prior to instance termination.
-Example: deleteEnvironment("myvaleantpartnership", "sandbox")
-
-getEnvironmentName(instanceId : string, objectType : string) : promise[environmentName : string]
-Gets the environment name for the given object.
-objectType = instance | snapshot | ami
-Example: getEnvironmentName("i-c2ed2790", "instance")
+decommissionEnvironment(projectName : string, environmentName : string) : promise[newSnapshotId : string]
+Takes an existing environment offline, makes a snapshot, then deletes the instances, given the project and environment names.
+Example: decommissionEnvironment("myvaleantpartnership", "Staging").then(...)
 */
 
 /**
@@ -214,8 +209,8 @@ AWSController.prototype.listSnapshots = function(region, project, environment, p
  * objectType = instance | snapshot | ami
  *
  * @param region
- * @param objectID
- * @param objectType
+ * @param project
+ * @param environment
  * @param params
  * @returns {*}
  */
@@ -284,13 +279,13 @@ AWSController.prototype.getProjectName = function(region, objectID, objectType, 
 
     var projectName = 'Project Tag Not Found';
 
-    if(!!!objectID){
+    if(!objectID){
         return Q.fcall(function(){
             return projectName;
         });
     }
 
-    if(!!!objectType){
+    if(!objectType){
         return Q.fcall(function(){
             return projectName;
         });
@@ -399,7 +394,7 @@ AWSController.prototype.setProjectName = function(region, objectID, name, params
         });
     }
 
-    if(!!!objectID){
+    if(!objectID){
         return Q.fcall(function(){
             return false;
         });
@@ -441,13 +436,13 @@ AWSController.prototype.getEnvironment = function(region, objectID, objectType, 
 
     var environment = 'Environment Tag Not Found';
 
-    if(!!!objectID){
+    if(!objectID){
         return Q.fcall(function(){
             return environment;
         });
     }
 
-    if(!!!objectType){
+    if(!objectType){
         return Q.fcall(function(){
             return environment;
         });
@@ -556,7 +551,7 @@ AWSController.prototype.setEnvironment = function(region, objectID, environment,
         });
     }
 
-    if(!!!objectID){
+    if(!objectID){
         return Q.fcall(function(){
             return false;
         });
