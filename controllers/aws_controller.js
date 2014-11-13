@@ -25,21 +25,21 @@ function sortByKey(array, key) {
 /*
 II: When environments are created, they will be assigned DNS names via Route53's changeResourceRecordSets API call.
 
-createEnvironmentFromSnapshot(projectName : string, newEnvironmentName : string, snapshotId : string) : promise[instanceId : string, domain : string, ipAddress : string]
+createEnvironmentFromSnapshot(region: string, projectName : string, newEnvironmentName : string, snapshotId : string, additionalParams: object) : promise[instanceId : string, domain : string, ipAddress : string]
 Creates a new environment from a given snapshotId. If the environment exists, the function fails.
-Example: createEnvironmentFromSnapshot("myvaleantpartnership", "Staging", "snap-27d95081").then(...)
+Example: createEnvironmentFromSnapshot("us-east-1", "myvaleantpartnership", "Staging", "snap-27d95081", {}).then(...)
 
-createEnvironmentSnapshot(projectName : string. environmentName : string) : promise[newSnapshotId : string]
+createEnvironmentSnapshot(region: string, projectName : string. environmentName : string, additionalParams: object) : promise[newSnapshotId : string]
 Creates a new snapshot for the given project and environment. Instance will be shutdown to ensure snapshot integrity.
-Example: createEnvironmentSnapshot("myvaleantpartnership", "Production").then(...)
+Example: createEnvironmentSnapshot("us-east-1", "myvaleantpartnership", "Production", {}).then(...)
 
-cloneEnvironment(projectName : string, sourceEnvironmentName : string, targetEnvironmentName : string) : promise[instanceId : string, domain : string, ipAddress : string]
+copyEnvironment(region: string, projectName : string, sourceEnvironmentName : string, targetEnvironmentName : string, additionalParams: object) : promise[instanceId : string, domain : string, ipAddress : string]
 Convenience method for createEnvironment function with latest snapshot.
-Example: cloneEnvironment("myvaleantpartnership", "Production", "Staging").then(...)
+Example: copyEnvironment("us-east-1", "myvaleantpartnership", "Production", "Staging", {}).then(...)
 
-decommissionEnvironment(projectName : string, environmentName : string) : promise[newSnapshotId : string]
+deleteEnvironment(region: string, projectName : string, environmentName : string, additionalParams: object) : promise[newSnapshotId : string]
 Takes an existing environment offline, makes a snapshot, then deletes the instances, given the project and environment names.
-Example: decommissionEnvironment("myvaleantpartnership", "Staging").then(...)
+Example: deleteEnvironment("us-east-1", "myvaleantpartnership", "Staging", {}).then(...)
 */
 
 /**
