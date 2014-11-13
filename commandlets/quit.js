@@ -13,10 +13,10 @@ module.exports = function(context, callback) {
 
     var randomFace = faces[Math.floor(Math.random()*faces.length)];
     console.log(cowsay.say({
-        text:'Goooodbye',
-        f: randomFace,
+        text:'Goodbye',
+        f: randomFace/*,
         e: 'oO',
-        T: 'U '
+        T: 'U '*/
     }));
     process.exit();
 };

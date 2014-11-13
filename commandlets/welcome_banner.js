@@ -10,6 +10,8 @@ module.exports = function(context, callback) {
     var l = context.fill || defaultFill;
     var s = context.background || defaultBackground;
 
+    var nameAndVersion = context.app.model.name+' '+context.app.model.version;
+
     var banner =
 '\n'+
 '          $$\\                   $$\\     $$\\'+'\n'+
@@ -21,7 +23,7 @@ module.exports = function(context, callback) {
 '$$ |      $$ |  $$ |\\$$$$$$$ |  \\$$$$  |$$ |  $$ |$$ | $$ | $$ |'+'\n'+
 '\\__|      \\__|  \\__| \\____$$ |   \\____/ \\__|  \\__|\\__| \\__| \\__|'+'\n'+
 '                    $$\\   $$ |\n'+
-'                    \\$$$$$$  |     X'+context.app.model.name+' '+context.app.model.version+'X\n'+
+'                    \\$$$$$$  |     X'+nameAndVersion+'X\n'+
 '                     \\______/\n';
 
     var lines = banner.split('\n');
@@ -43,10 +45,36 @@ module.exports = function(context, callback) {
 
     banner = lines.join('\n');
 
+    var figlet = require('figlet');
+    banner = figlet.textSync('Rhythm', {
+        //font: 'Big Money-nw'
+        font: 'Georgia11'
+    });
+
+    var baselineOffset = 10;
+    var charOffset = 37;
+
+    var lines = banner.split('\n');
+    lines.forEach(function(el, idx, arr){
+        if(idx == baselineOffset){
+            var line = '';
+            for(var i = 0; i < charOffset; ++i){
+                var char = el.substr(i, 1);
+                line += char;
+            }
+            arr[idx] = line+'X'+nameAndVersion+'X';
+        }
+
+        arr[idx] = ' '+arr[idx]+' ';
+    });
+
+    lines.unshift('');
+
+    banner = lines.join('\n');
+
     banner = banner.replace(/ /g, s).replace(/\$/g, l).replace(/X/g, ' ');
 
     banner += '\n\nType "help" for a list of available commands.';
-
     console.log(banner);
     
     return banner;

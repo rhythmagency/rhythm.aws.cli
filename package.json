@@ -9,6 +9,7 @@
   "dependencies": {
     "aws-sdk": "^2.0.9",
     "cowsay": "^1.0.3",
+    "figlet": "^1.1.0",
     "fs-extra": "^0.10.0",
     "prompt": "^0.2.14",
     "q": "^1.1.1"
