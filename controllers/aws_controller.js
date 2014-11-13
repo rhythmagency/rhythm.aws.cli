@@ -36,11 +36,6 @@ Sets the project name for the given object. Enables project related commands for
 objectType = instance | snapshot | ami
 Example: setProjectName("i-c2ed2790", "instance", "myvaleantpartnership")
 
-getProjectName(id : string, objectType : string) : promise[projectName : string]
-Gets the project name for the given object.
-objectType = instance | snapshot | ami
-Example: getProjectName("i-c2ed2790", "instance")
-
 setEnvironmentName(id : string, objectType : string, newEnvironmentName : string) : promise
 Sets the environment name for the given object. Project name must be assigned first. Environment name must be unique for project. Enables environment related commands for objects created outside of this module.
 objectType = instance | snapshot | ami
@@ -180,29 +175,35 @@ AWSController.prototype.listSnapshots = function(region, project, environment, p
 
     params = params || {};
 
-    params.OwnerIds = [
-        //todo get our owner id
-        '683984025722'
-    ];
+    var filters = [];
 
-    params.Filters = [];
+//    filters.push(
+//        {
+//            Name: 'owner-alias',
+//            Values: [
+//                'self'
+//            ]
+//        }
+//    );
 
-    project = project.toLowerCase();
+    if(!!project) {
+        project = project.toLowerCase();
 
-    params.Filters.push(
-        {
-            Name: 'tag:'+CONSTANTS.TAG_PROJECT_NAME,
-            Values: [
-                project
-            ]
-        }
-    );
+        filters.push(
+            {
+                Name: 'tag:' + CONSTANTS.TAG_PROJECT_NAME,
+                Values: [
+                    project
+                ]
+            }
+        );
+    }
 
-    if(environment) {
+    if(!!environment) {
         environment = environment.toLowerCase();
         environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
 
-        params.Filters.push(
+        filters.push(
             {
                 Name: 'tag:' + CONSTANTS.TAG_ENVIRONMENT,
                 Values: [
@@ -212,20 +213,24 @@ AWSController.prototype.listSnapshots = function(region, project, environment, p
         );
     }
 
+    if(filters.length > 0)
+        params.Filters = filters;
+
     return Q.ninvoke(ec2, 'describeSnapshots', params);
 };
 
 /**
- * Gets information for the most recent snapshot for the given project / environment.
+ * Gets a list of all images for a given project / environment.
+ * objectType = instance | snapshot | ami
  *
  * @param region
- * @param project
- * @param environment
+ * @param objectID
+ * @param objectType
  * @param params
  * @returns {*}
  */
 
-AWSController.prototype.getMostRecentSnapshot = function(region, project, environment, params){
+AWSController.prototype.listImages = function(region, project, environment, params){
     var self = this;
 
     self.AWS.config.update({region: region});
@@ -234,29 +239,30 @@ AWSController.prototype.getMostRecentSnapshot = function(region, project, enviro
 
     params = params || {};
 
-    params.OwnerIds = [
-        //todo get our owner id
-        '683984025722'
+    params.Owners = [
+        'self'
     ];
 
-    params.Filters = [];
+    var filters = params.Filters || [];
 
-    project = project.toLowerCase();
+    if(!!project) {
+        project = project.toLowerCase();
 
-    params.Filters.push(
-        {
-            Name: 'tag:'+CONSTANTS.TAG_PROJECT_NAME,
-            Values: [
-                project
-            ]
-        }
-    );
+        filters.push(
+            {
+                Name: 'tag:' + CONSTANTS.TAG_PROJECT_NAME,
+                Values: [
+                    project
+                ]
+            }
+        );
+    }
 
-    if(environment) {
+    if(!!environment) {
         environment = environment.toLowerCase();
         environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
 
-        params.Filters.push(
+        filters.push(
             {
                 Name: 'tag:' + CONSTANTS.TAG_ENVIRONMENT,
                 Values: [
@@ -266,7 +272,109 @@ AWSController.prototype.getMostRecentSnapshot = function(region, project, enviro
         );
     }
 
-    return Q.ninvoke(ec2, 'describeSnapshots', params);
+    if(filters.length > 0)
+        params.Filters = filters;
+
+    return Q.ninvoke(ec2, 'describeImages', params);
+};
+
+/**
+ * Gets the project name for the given object.
+ * objectType = instance | snapshot | ami
+ *
+ * @param region
+ * @param objectID
+ * @param objectType
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.getProjectName = function(region, objectID, objectType, params){
+    var self = this;
+
+    var projectName = 'Project Tag Not Found';
+
+    params = params || {};
+    objectType = objectType.toLowerCase();
+
+    if(!!!objectID){
+        return Q.fcall(function(){
+            return projectName;
+        });
+    }
+
+    if(objectType == 'instance'){
+        params.InstanceIds = [
+            objectID
+        ];
+
+        return self.listInstances(region, params)
+            .then(function(data){
+                data.Reservations.forEach(function(el, idx, arr) {
+                    if (el.Instances.length > 0) {
+                        el.Instances.forEach(function(el, idx, arr) {
+                            if (el.Tags.length > 0) {
+                                el.Tags.forEach(function(el, idx, arr) {
+                                    var tagName = el.Key;
+
+                                    if (tagName == CONSTANTS.TAG_PROJECT_NAME) {
+                                        projectName = el.Value;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                return projectName;
+            });
+    }else if(objectType == 'snapshot'){
+        params.SnapshotIds = [
+            objectID
+        ];
+
+        return self.listSnapshots(region, null, null, params)
+            .then(function(data){
+                data.Snapshots.forEach(function(el, idx, arr) {
+                    if (el.Tags.length > 0) {
+                        el.Tags.forEach(function(el, idx, arr) {
+                            var tagName = el.Key;
+
+                            if (tagName == CONSTANTS.TAG_PROJECT_NAME) {
+                                projectName = el.Value;
+                            }
+                        });
+                    }
+                });
+
+                return projectName;
+            });
+    }else if(objectType == 'ami') {
+        params.ImageIds = [
+            objectID
+        ];
+
+        return self.listImages(region, null, null, params)
+            .then(function(data){
+                if(data.Images.length > 0){
+                    if(data.Images[0].Tags.length > 0){
+                        data.Images[0].Tags.forEach(function(el, idx, arr){
+                            var tagName = el.Key;
+
+                            if (tagName == CONSTANTS.TAG_PROJECT_NAME) {
+                                projectName = el.Value;
+                            }
+                        });
+                    }
+                }
+
+                return projectName;
+            });
+    }else{
+        return Q.fcall(function(){
+            return projectName;
+        });
+    }
 };
 
 module.exports = AWSController;

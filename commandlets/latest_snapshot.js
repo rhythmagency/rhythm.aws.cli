@@ -17,23 +17,17 @@ module.exports = function(context) {
 
     var defaultRegion = 'us-east-1';
 
-    var userArguments = {};
-
     var promptMsg = 'region [' + defaultRegion + ']';
 
     return Q.ninvoke(prompt, 'get', [promptMsg])
         .then(function(stdin) {
             var region = stdin[promptMsg] || defaultRegion;
 
-            userArguments.region = region;
-
             var promptMsg2 = 'project';
 
             return Q.ninvoke(prompt, 'get', [promptMsg2])
                 .then(function(stdin) {
                     var project = stdin[promptMsg2];
-
-                    userArguments.project = project;
 
                     var defaultEnv = 'Production';
                     var promptMsg3 = 'environment ['+defaultEnv+']';
@@ -42,36 +36,32 @@ module.exports = function(context) {
                         .then(function(stdin) {
                             var environment = stdin[promptMsg3] || defaultEnv;
 
-                            userArguments.environment = environment;
-
-                            return awsAPI.getMostRecentSnapshot(region, project, environment, {})
+                            return awsAPI.listSnapshots(region, project, environment, {})
                                 .then(function(data) {
                                     if(data.Snapshots.length > 0) {
                                         sortByKey(data.Snapshots, 'StartTime').reverse();
+                                        var el = data.Snapshots.pop();
 
                                         console.log('|------------------------------------------------');
-                                        data.Snapshots.forEach(function(el, idx, arr) {
-                                            if(idx > 0) return;
-                                            console.log('| SnapshotId:                  ' + el.SnapshotId);
-                                            console.log('| VolumeId:                    ' + el.VolumeId);
-                                            console.log('| State:                       ' + el.State);
-                                            console.log('| Progress:                    ' + el.Progress);
-                                            console.log('| VolumeSize:                  ' + el.VolumeSize);
-                                            console.log('| Encrypted:                   ' + el.Encrypted);
-                                            console.log('| StartTime:                   ' + el.StartTime);
-                                            if (el.Tags.length > 0) {
-                                                console.log('| Tags:');
-                                                el.Tags.forEach(function(el, idx, arr) {
-                                                    var tagName = el.Key;
+                                        console.log('| SnapshotId:                  ' + el.SnapshotId);
+                                        console.log('| VolumeId:                    ' + el.VolumeId);
+                                        console.log('| State:                       ' + el.State);
+                                        console.log('| Progress:                    ' + el.Progress);
+                                        console.log('| VolumeSize:                  ' + el.VolumeSize);
+                                        console.log('| Encrypted:                   ' + el.Encrypted);
+                                        console.log('| StartTime:                   ' + el.StartTime);
+                                        if (el.Tags.length > 0) {
+                                            console.log('| Tags:');
+                                            el.Tags.forEach(function(el, idx, arr) {
+                                                var tagName = el.Key;
 
-                                                    if (tagName.substr(0, CONSTANTS.TAG_PREFIX.length) == CONSTANTS.TAG_PREFIX) {
-                                                        tagName = tagName.substr(CONSTANTS.TAG_PREFIX.length);
-                                                    }
-                                                    console.log('|       ' + tagName + ': ' + el.Value);
-                                                });
-                                            }
-                                            console.log('|------------------------------------------------');
-                                        });
+                                                if (tagName.substr(0, CONSTANTS.TAG_PREFIX.length) == CONSTANTS.TAG_PREFIX) {
+                                                    tagName = tagName.substr(CONSTANTS.TAG_PREFIX.length);
+                                                }
+                                                console.log('|       ' + tagName + ': ' + el.Value);
+                                            });
+                                        }
+                                        console.log('|------------------------------------------------');
                                     }
                                 });
                             });
