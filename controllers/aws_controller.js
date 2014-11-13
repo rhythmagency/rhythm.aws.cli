@@ -31,11 +31,6 @@ deleteEnvironment(projectName : string, environmentName : string) : promise[newS
 Deletes an existing environment, given the project / environment name. Instance will be shutdown, and a snapshot of the instance will be taken prior to instance termination.
 Example: deleteEnvironment("myvaleantpartnership", "sandbox")
 
-
-listEnvironmentNames(string projectName) : promise[environmentNames : array]
-Lists all environment names for a given project
-Example: listEnvironmentNames("myvaleantpartnership").then(...)
-
 setProjectName(id : string, objectType : string, newProjectName : string) : promise
 Sets the project name for the given object. Enables project related commands for objects created outside of this module.
 objectType = instance | snapshot | ami
@@ -118,6 +113,51 @@ AWSController.prototype.listProjects = function(region, params){
             projectNamesArr.sort();
 
             return projectNamesArr;
+        });
+};
+
+/**
+ * Lists all environment names for a given project
+ *
+ * @param region
+ * @param project
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.listEnvironments = function(region, project, params){
+    var self = this;
+
+    params = params || {};
+
+    return self.listInstances(region, params)
+        .then(function(data){
+            var environmentNames = {};
+
+            data.Reservations.forEach(function(el, idx, arr) {
+                if (el.Instances.length > 0) {
+                    el.Instances.forEach(function(el, idx, arr) {
+                        if (el.Tags.length > 0) {
+                            el.Tags.forEach(function(el, idx, arr) {
+                                var tagName = el.Key;
+
+                                if (tagName == CONSTANTS.TAG_ENVIRONMENT) {
+                                    environmentNames[el.Value] = el.Value;
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            var environmentNamesArr = [];
+            Object.keys(environmentNames).forEach(function(el, idx, arr) {
+                environmentNamesArr.push(el);
+            });
+
+            environmentNamesArr.sort();
+
+            return environmentNamesArr;
         });
 };
 
