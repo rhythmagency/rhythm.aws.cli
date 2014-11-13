@@ -391,6 +391,14 @@ AWSController.prototype.setProjectName = function(region, objectID, name, params
 
     var ec2 = new self.AWS.EC2();
 
+    if(!!name) {
+        name = name.toLowerCase();
+    }else{
+        return Q.fcall(function(){
+            return false;
+        });
+    }
+
     if(!!!objectID){
         return Q.fcall(function(){
             return false;
@@ -417,12 +425,110 @@ AWSController.prototype.setProjectName = function(region, objectID, name, params
     return Q.ninvoke(ec2, 'createTags', params);
 };
 
-/*
-setEnvironmentName(id : string, objectType : string, newEnvironmentName : string) : promise
-
-objectType = instance | snapshot | ami
-Example: setEnvironmentName("i-c2ed2790", "instance", "staging")
+/**
+ * Gets the environment for the given object.
+ * objectType = instance | snapshot | ami
+ *
+ * @param region
+ * @param objectID
+ * @param objectType
+ * @param params
+ * @returns {*}
  */
+
+AWSController.prototype.getEnvironment = function(region, objectID, objectType, params){
+    var self = this;
+
+    var environment = 'Environment Tag Not Found';
+
+    if(!!!objectID){
+        return Q.fcall(function(){
+            return environment;
+        });
+    }
+
+    if(!!!objectType){
+        return Q.fcall(function(){
+            return environment;
+        });
+    }
+
+    params = params || {};
+    objectType = objectType.toLowerCase();
+
+    if(objectType == 'instance'){
+        params.InstanceIds = [
+            objectID
+        ];
+
+        return self.listInstances(region, params)
+            .then(function(data){
+                data.Reservations.forEach(function(el, idx, arr) {
+                    if (el.Instances.length > 0) {
+                        el.Instances.forEach(function(el, idx, arr) {
+                            if (el.Tags.length > 0) {
+                                el.Tags.forEach(function(el, idx, arr) {
+                                    var tagName = el.Key;
+
+                                    if (tagName == CONSTANTS.TAG_ENVIRONMENT) {
+                                        environment = el.Value;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                return environment;
+            });
+    }else if(objectType == 'snapshot'){
+        params.SnapshotIds = [
+            objectID
+        ];
+
+        return self.listSnapshots(region, null, null, params)
+            .then(function(data){
+                data.Snapshots.forEach(function(el, idx, arr) {
+                    if (el.Tags.length > 0) {
+                        el.Tags.forEach(function(el, idx, arr) {
+                            var tagName = el.Key;
+
+                            if (tagName == CONSTANTS.TAG_ENVIRONMENT) {
+                                environment = el.Value;
+                            }
+                        });
+                    }
+                });
+
+                return environment;
+            });
+    }else if(objectType == 'ami') {
+        params.ImageIds = [
+            objectID
+        ];
+
+        return self.listImages(region, null, null, params)
+            .then(function(data){
+                if(data.Images.length > 0){
+                    if(data.Images[0].Tags.length > 0){
+                        data.Images[0].Tags.forEach(function(el, idx, arr){
+                            var tagName = el.Key;
+
+                            if (tagName == CONSTANTS.TAG_ENVIRONMENT) {
+                                environment = el.Value;
+                            }
+                        });
+                    }
+                }
+
+                return environment;
+            });
+    }else{
+        return Q.fcall(function(){
+            return environment;
+        });
+    }
+};
 
 /**
  * Sets the environment for the given object.
@@ -440,6 +546,15 @@ AWSController.prototype.setEnvironment = function(region, objectID, environment,
     self.AWS.config.update({region: region});
 
     var ec2 = new self.AWS.EC2();
+
+    if(!!environment) {
+        environment = environment.toLowerCase();
+        environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
+    }else{
+        return Q.fcall(function(){
+            return false;
+        });
+    }
 
     if(!!!objectID){
         return Q.fcall(function(){
