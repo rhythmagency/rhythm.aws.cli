@@ -31,11 +31,6 @@ deleteEnvironment(projectName : string, environmentName : string) : promise[newS
 Deletes an existing environment, given the project / environment name. Instance will be shutdown, and a snapshot of the instance will be taken prior to instance termination.
 Example: deleteEnvironment("myvaleantpartnership", "sandbox")
 
-setEnvironmentName(id : string, objectType : string, newEnvironmentName : string) : promise
-Sets the environment name for the given object. Project name must be assigned first. Environment name must be unique for project. Enables environment related commands for objects created outside of this module.
-objectType = instance | snapshot | ami
-Example: setEnvironmentName("i-c2ed2790", "instance", "staging")
-
 getEnvironmentName(instanceId : string, objectType : string) : promise[environmentName : string]
 Gets the environment name for the given object.
 objectType = instance | snapshot | ami
@@ -417,6 +412,56 @@ AWSController.prototype.setProjectName = function(region, objectID, name, params
         {
             Key: CONSTANTS.TAG_PROJECT_NAME,
             Value: name
+        }
+    ];
+    return Q.ninvoke(ec2, 'createTags', params);
+};
+
+/*
+setEnvironmentName(id : string, objectType : string, newEnvironmentName : string) : promise
+
+objectType = instance | snapshot | ami
+Example: setEnvironmentName("i-c2ed2790", "instance", "staging")
+ */
+
+/**
+ * Sets the environment for the given object.
+ *
+ * @param region
+ * @param objectID
+ * @param environment (Production, Staging, Test)
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.setEnvironment = function(region, objectID, environment, params){
+    var self = this;
+
+    self.AWS.config.update({region: region});
+
+    var ec2 = new self.AWS.EC2();
+
+    if(!!!objectID){
+        return Q.fcall(function(){
+            return false;
+        });
+    }
+
+    params = params || {};
+
+    var listParams = {};
+    listParams.InstanceIds = [
+        objectID
+    ];
+
+    params.Resources = [
+        objectID
+    ];
+
+    params.Tags = [
+        {
+            Key: CONSTANTS.TAG_ENVIRONMENT,
+            Value: environment
         }
     ];
     return Q.ninvoke(ec2, 'createTags', params);
