@@ -31,11 +31,6 @@ deleteEnvironment(projectName : string, environmentName : string) : promise[newS
 Deletes an existing environment, given the project / environment name. Instance will be shutdown, and a snapshot of the instance will be taken prior to instance termination.
 Example: deleteEnvironment("myvaleantpartnership", "sandbox")
 
-setProjectName(id : string, objectType : string, newProjectName : string) : promise
-Sets the project name for the given object. Enables project related commands for objects created outside of this module.
-objectType = instance | snapshot | ami
-Example: setProjectName("i-c2ed2790", "instance", "myvaleantpartnership")
-
 setEnvironmentName(id : string, objectType : string, newEnvironmentName : string) : promise
 Sets the environment name for the given object. Project name must be assigned first. Environment name must be unique for project. Enables environment related commands for objects created outside of this module.
 objectType = instance | snapshot | ami
@@ -294,14 +289,20 @@ AWSController.prototype.getProjectName = function(region, objectID, objectType, 
 
     var projectName = 'Project Tag Not Found';
 
-    params = params || {};
-    objectType = objectType.toLowerCase();
-
     if(!!!objectID){
         return Q.fcall(function(){
             return projectName;
         });
     }
+
+    if(!!!objectType){
+        return Q.fcall(function(){
+            return projectName;
+        });
+    }
+
+    params = params || {};
+    objectType = objectType.toLowerCase();
 
     if(objectType == 'instance'){
         params.InstanceIds = [
@@ -375,6 +376,50 @@ AWSController.prototype.getProjectName = function(region, objectID, objectType, 
             return projectName;
         });
     }
+};
+
+/**
+ * Sets the project name for the given object. Enables project related commands for objects created outside of this module.
+ * objectType = instance | snapshot | ami
+ *
+ * @param region
+ * @param objectID
+ * @param name
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.setProjectName = function(region, objectID, name, params){
+    var self = this;
+
+    self.AWS.config.update({region: region});
+
+    var ec2 = new self.AWS.EC2();
+
+    if(!!!objectID){
+        return Q.fcall(function(){
+            return false;
+        });
+    }
+
+    params = params || {};
+
+    var listParams = {};
+    listParams.InstanceIds = [
+        objectID
+    ];
+
+    params.Resources = [
+        objectID
+    ];
+
+    params.Tags = [
+        {
+            Key: CONSTANTS.TAG_PROJECT_NAME,
+            Value: name
+        }
+    ];
+    return Q.ninvoke(ec2, 'createTags', params);
 };
 
 module.exports = AWSController;
