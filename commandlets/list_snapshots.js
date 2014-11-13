@@ -1,62 +1,46 @@
 'use strict';
 
-module.exports = function(context, callback) {
+var Q = require('q');
+
+module.exports = function(context) {
     var app = context.app;
+    var awsAPI = app.awsAPI;
     var prompt = app.prompt;
 
     var defaultRegion = 'us-east-1';
 
-    var promptMsg = 'region ['+defaultRegion+']';
+    var userArguments = {};
 
-    prompt.get([promptMsg], function(err, stdin) {
-        var region = stdin[promptMsg] || defaultRegion;
+    var promptMsg = 'region [' + defaultRegion + ']';
 
-        context.app.model.AWS.config.update({region: region});
+    return Q.ninvoke(prompt, 'get', [promptMsg])
+        .then(function(stdin) {
+            var region = stdin[promptMsg] || defaultRegion;
 
-        var ec2 = new context.app.model.AWS.EC2();
+            userArguments.region = region;
 
-        var params = context.params || {};
+            var promptMsg2 = 'project';
 
-        params.OwnerIds = [
-            //todo get our owner id
-            '683984025722'
-        ];
+            return Q.ninvoke(prompt, 'get', [promptMsg2])
+                .then(function(stdin) {
+                    var project = stdin[promptMsg2];
 
-        ec2.describeSnapshots(params, function(err, data){
-            if(err){
-                callback(err, data);
-                return;
-            }
-//            console.log(data);
+                    userArguments.project = project;
 
-            var snapshotIDs = [];
+                    var defaultEnv = 'Production';
+                    var promptMsg3 = 'environment ['+defaultEnv+']';
 
-            data.Snapshots.forEach(function(el, idx, arr) {
-                if(idx > 0)
-                    return;
+                    return Q.ninvoke(prompt, 'get', [promptMsg3])
+                        .then(function(stdin) {
+                            var environment = stdin[promptMsg3] || defaultEnv;
 
-                console.log(el);
-                snapshotIDs.push(el['SnapshotId']);
-            });
+                            userArguments.environment = environment;
 
-            var params = {
-                Resources: snapshotIDs,
-                Tags: [
-                    {
-                        Key: 'aws.cli.Environment',
-                        Value: 'Production'
-                    }
-                ]
-            };
-
-            ec2.createTags(params, function(err, data){
-                if (err)
-                    console.log(err, err.stack);
-                else
-                    console.log(data);
-
-                callback(err, data);
-            });
+                            return awsAPI.listSnapshots(region, project, environment, {})
+                                .then(function(data) {
+                                    console.log(data);
+                                });
+                            });
+                    });
         });
-    });
 };

@@ -12,3 +12,4 @@ define("MODELS_FOLDER", "models");
 define("COMMANDLETS_FOLDER", "commandlets");
 define("TAG_PREFIX", "aws.cli.");
 define("TAG_PROJECT_NAME", "aws.cli.ProjectName");
+define("TAG_ENVIRONMENT", "aws.cli.Environment");
