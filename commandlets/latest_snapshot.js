@@ -3,6 +3,13 @@
 var Q = require('q');
 var CONSTANTS = require('../constants');
 
+function sortByKey(array, key) {
+    return array.sort(function(a, b) {
+        var x = a[key]; var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+    });
+}
+
 module.exports = function(context) {
     var app = context.app;
     var awsAPI = app.awsAPI;
@@ -37,11 +44,14 @@ module.exports = function(context) {
 
                             userArguments.environment = environment;
 
-                            return awsAPI.listSnapshots(region, project, environment, {})
+                            return awsAPI.getMostRecentSnapshot(region, project, environment, {})
                                 .then(function(data) {
                                     if(data.Snapshots.length > 0) {
+                                        sortByKey(data.Snapshots, 'StartTime').reverse();
+
                                         console.log('|------------------------------------------------');
                                         data.Snapshots.forEach(function(el, idx, arr) {
+                                            if(idx > 0) return;
                                             console.log('| SnapshotId:                  ' + el.SnapshotId);
                                             console.log('| VolumeId:                    ' + el.VolumeId);
                                             console.log('| State:                       ' + el.State);

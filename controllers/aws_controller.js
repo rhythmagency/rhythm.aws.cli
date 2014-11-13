@@ -15,10 +15,6 @@ function AWSController() {
     }
 }
 /*
-getMostRecentSnapshot(projectName : string, environmentName : string) : promise[snapshot : object]
-Gets information for the most recent snapshot for the given project / environment.
-Example: getMostRecentSnapshot("myvaleantpartnership", "production").then(...)
-
 createEnvironment(projectName : string, newEnvironmentName : string, snapshotId : string) : promise[instanceId : string, domain : string, ipAddress : string]
 Creates a new environment from a given snapshotId. If the environment exists, the function fails.
 Example: createEnvironment("myvaleantpartnership", "sandbox", "snap-27d95081").then(...)
@@ -136,6 +132,60 @@ AWSController.prototype.listProjects = function(region, params){
  */
 
 AWSController.prototype.listSnapshots = function(region, project, environment, params){
+    var self = this;
+
+    self.AWS.config.update({region: region});
+
+    var ec2 = new self.AWS.EC2();
+
+    params = params || {};
+
+    params.OwnerIds = [
+        //todo get our owner id
+        '683984025722'
+    ];
+
+    params.Filters = [];
+
+    project = project.toLowerCase();
+
+    params.Filters.push(
+        {
+            Name: 'tag:'+CONSTANTS.TAG_PROJECT_NAME,
+            Values: [
+                project
+            ]
+        }
+    );
+
+    if(environment) {
+        environment = environment.toLowerCase();
+        environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
+
+        params.Filters.push(
+            {
+                Name: 'tag:' + CONSTANTS.TAG_ENVIRONMENT,
+                Values: [
+                    environment
+                ]
+            }
+        );
+    }
+
+    return Q.ninvoke(ec2, 'describeSnapshots', params);
+};
+
+/**
+ * Gets information for the most recent snapshot for the given project / environment.
+ *
+ * @param region
+ * @param project
+ * @param environment
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.getMostRecentSnapshot = function(region, project, environment, params){
     var self = this;
 
     self.AWS.config.update({region: region});
