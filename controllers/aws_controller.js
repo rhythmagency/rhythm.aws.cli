@@ -416,10 +416,6 @@ AWSController.prototype.getProjectName = function(region, objectID, objectType, 
 AWSController.prototype.setProjectName = function(region, objectID, name, params){
     var self = this;
 
-    self.AWS.config.update({region: region});
-
-    var ec2 = new self.AWS.EC2();
-
     if(!!name) {
         name = name.toLowerCase();
     }else{
@@ -428,30 +424,7 @@ AWSController.prototype.setProjectName = function(region, objectID, name, params
         });
     }
 
-    if(!objectID){
-        return Q.fcall(function(){
-            return false;
-        });
-    }
-
-    params = params || {};
-
-    var listParams = {};
-    listParams.InstanceIds = [
-        objectID
-    ];
-
-    params.Resources = [
-        objectID
-    ];
-
-    params.Tags = [
-        {
-            Key: CONSTANTS.TAG_PROJECT_NAME,
-            Value: name
-        }
-    ];
-    return Q.ninvoke(ec2, 'createTags', params);
+    return self.createTags(region, objectID, CONSTANTS.TAG_PROJECT_NAME, name, params);
 };
 
 /**
@@ -572,10 +545,6 @@ AWSController.prototype.getEnvironment = function(region, objectID, objectType, 
 AWSController.prototype.setEnvironment = function(region, objectID, environment, params){
     var self = this;
 
-    self.AWS.config.update({region: region});
-
-    var ec2 = new self.AWS.EC2();
-
     if(!!environment) {
         environment = environment.toLowerCase();
         environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
@@ -584,6 +553,16 @@ AWSController.prototype.setEnvironment = function(region, objectID, environment,
             return false;
         });
     }
+
+    return self.createTags(region, objectID, CONSTANTS.TAG_ENVIRONMENT, environment, params);
+};
+
+AWSController.prototype.createTags = function(region, objectID, tagKey, tagValue, params){
+    var self = this;
+
+    self.AWS.config.update({region: region});
+
+    var ec2 = new self.AWS.EC2();
 
     if(!objectID){
         return Q.fcall(function(){
@@ -604,10 +583,11 @@ AWSController.prototype.setEnvironment = function(region, objectID, environment,
 
     params.Tags = [
         {
-            Key: CONSTANTS.TAG_ENVIRONMENT,
-            Value: environment
+            Key: tagKey,
+            Value: tagValue
         }
     ];
+
     return Q.ninvoke(ec2, 'createTags', params);
 };
 
