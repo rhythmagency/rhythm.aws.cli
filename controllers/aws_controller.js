@@ -29,10 +29,6 @@ createEnvironmentFromSnapshot(region: string, projectName : string, newEnvironme
 Creates a new environment from a given snapshotId. If the environment exists, the function fails.
 Example: createEnvironmentFromSnapshot("us-east-1", "myvaleantpartnership", "Staging", "snap-27d95081", {}).then(...)
 
-createEnvironmentSnapshot(region: string, projectName : string. environmentName : string, additionalParams: object) : promise[newSnapshotId : string]
-Creates a new snapshot for the given project and environment. Instance will be shutdown to ensure snapshot integrity.
-Example: createEnvironmentSnapshot("us-east-1", "myvaleantpartnership", "Production", {}).then(...)
-
 copyEnvironment(region: string, projectName : string, sourceEnvironmentName : string, targetEnvironmentName : string, additionalParams: object) : promise[instanceId : string, domain : string, ipAddress : string]
 Convenience method for createEnvironment function with latest snapshot.
 Example: copyEnvironment("us-east-1", "myvaleantpartnership", "Production", "Staging", {}).then(...)
@@ -240,7 +236,6 @@ AWSController.prototype.latestSnapshot = function(region, project, environment, 
 
 /**
  * Gets a list of all images for a given project / environment.
- * objectType = instance | snapshot | ami
  *
  * @param region
  * @param project
@@ -404,7 +399,6 @@ AWSController.prototype.getProjectName = function(region, objectID, objectType, 
 
 /**
  * Sets the project name for the given object. Enables project related commands for objects created outside of this module.
- * objectType = instance | snapshot | ami
  *
  * @param region
  * @param objectID
@@ -557,6 +551,17 @@ AWSController.prototype.setEnvironment = function(region, objectID, environment,
     return self.createTags(region, objectID, CONSTANTS.TAG_ENVIRONMENT, environment, params);
 };
 
+/**
+ * Creates / updates a tag for an EC2 object
+ *
+ * @param region
+ * @param objectID
+ * @param tagKey
+ * @param tagValue
+ * @param params
+ * @returns {*}
+ */
+
 AWSController.prototype.createTags = function(region, objectID, tagKey, tagValue, params){
     var self = this;
 
@@ -589,6 +594,106 @@ AWSController.prototype.createTags = function(region, objectID, tagKey, tagValue
     ];
 
     return Q.ninvoke(ec2, 'createTags', params);
+};
+
+/**
+ * Gets a list of all volumes for a given project / environment.
+ *
+ * @param region
+ * @param project
+ * @param environment
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.listVolumes = function(region, project, environment, params){
+    var self = this;
+
+    self.AWS.config.update({region: region});
+
+    var ec2 = new self.AWS.EC2();
+
+    params = params || {};
+
+    var filters = params.Filters || [];
+
+    if(!!project) {
+        project = project.toLowerCase();
+
+        filters.push(
+            {
+                Name: 'tag:' + CONSTANTS.TAG_PROJECT_NAME,
+                Values: [
+                    project
+                ]
+            }
+        );
+    }
+
+    if(!!environment) {
+        environment = environment.toLowerCase();
+        environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
+
+        filters.push(
+            {
+                Name: 'tag:' + CONSTANTS.TAG_ENVIRONMENT,
+                Values: [
+                    environment
+                ]
+            }
+        );
+    }
+
+    if(filters.length > 0)
+        params.Filters = filters;
+
+    return Q.ninvoke(ec2, 'describeVolumes', params);
+};
+
+/**
+ * Creates a new snapshot for the given project and environment. Instance will be shutdown to ensure snapshot integrity.
+ *
+ * @param region
+ * @param project
+ * @param environment
+ * @param params
+ * @returns {*}
+ */
+
+AWSController.prototype.createEnvironmentSnapshot = function(region, project, environment, params){
+    var self = this;
+
+    if(!!project) {
+        project = project.toLowerCase();
+    }else{
+        return Q.fcall(function(){
+            return false;
+        });
+    }
+
+    if(!!environment) {
+        environment = environment.toLowerCase();
+        environment = environment.substr(0, 1).toUpperCase() + environment.substr(1);
+    }else{
+        return Q.fcall(function(){
+            return false;
+        });
+    }
+
+    //first lookup VolumeId for
+    var imageParams = {};
+    return self.listVolumes(region, project, environment, imageParams)
+        .then(function(data){
+            params = params || {};
+
+            params.VolumeId = '';
+
+            params.DryRun = true;
+
+            return data;
+
+//            return Q.ninvoke(ec2, 'createSnapshot', params);
+        });
 };
 
 module.exports = AWSController;
